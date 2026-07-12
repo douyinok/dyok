@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS绿幕演唱会直播·单机位实战教程</title>
+    <style>
+        /* 全局重置与变量 */
+        :root {
+            --bg-color: #0b0f19;       /* 深黑背景 */
+            --sidebar-bg: #151b2b;     /* 侧边栏背景 */
+            --text-main: #f1f5f9;      /* 主文字色 */
+            --text-sub: #94a3b8;       /* 副文字色 */
+            --accent: #a855f7;         /* 强调色-舞台紫 */
+            --accent-glow: rgba(168, 85, 247, 0.2);
+            --code-bg: #020617;        /* 代码块背景 */
+            --border: #1e293b;         /* 边框色 */
+            --success: #22c55e;        /* 成功色 */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.7;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 侧边导航栏 */
+        aside {
+            width: 260px;
+            background: rgba(21, 27, 43, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        aside h2 {
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            padding-left: 0.5rem;
+            border-left: 3px solid var(--accent);
+            letter-spacing: 1px;
+        }
+
+        aside nav a {
+            display: block;
+            color: var(--text-sub);
+            text-decoration: none;
+            padding: 0.7rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            margin-bottom: 0.3rem;
+            border: 1px solid transparent;
+        }
+
+        aside nav a:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        aside nav a.active {
+            background: var(--accent-glow);
+            color: var(--accent);
+            border-color: rgba(168, 85, 247, 0.3);
+            font-weight: 600;
+        }
+
+        /* 主内容区 */
+        main {
+            margin-left: 260px;
+            padding: 4rem 5rem;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        /* 标题区域 */
+        header { margin-bottom: 4rem; border-bottom: 1px solid var(--border); padding-bottom: 2rem; }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .meta-tags {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+        
+        .tag {
+            background: var(--sidebar-bg);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        /* 章节样式 */
+        section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            color: var(--accent);
+            margin: 2rem 0 1rem;
+            font-weight: 600;
+        }
+
+        p { margin-bottom: 1.2rem; color: var(--text-sub); font-size: 1.05rem; }
+        
+        ul { 
+            margin-left: 1.5rem; 
+            margin-bottom: 1.5rem; 
+            color: var(--text-sub); 
+        }
+        
+        li { margin-bottom: 0.6rem; }
+
+        /* 代码块与复制按钮 */
+        .code-wrapper {
+            position: relative;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .code-header {
+            background: #1e293b;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            padding: 1.5rem;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #d8b4fe;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-sub);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover { 
+            background: var(--accent); 
+            color: #000; 
+            border-color: var(--accent);
+        }
+
+        /* 提示框 */
+        .alert {
+            padding: 1.2rem 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+            font-size: 0.95rem;
+        }
+
+        .alert-info {
+            background: rgba(168, 85, 247, 0.1);
+            border-color: var(--accent);
+            color: #e9d5ff;
+        }
+
+        .alert-warn {
+            background: rgba(234, 179, 8, 0.1);
+            border-color: #eab308;
+            color: #fef08a;
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+        
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th { color: var(--accent); font-weight: 600; background: rgba(255,255,255,0.02); }
+        td { color: var(--text-sub); }
+
+        /* 移动端适配 */
+        @media (max-width: 900px) {
+            aside { 
+                display: none; /* 移动端暂时隐藏侧边栏，简化体验 */
+            }
+            main { 
+                margin-left: 0; 
+                padding: 2rem 1.5rem; 
+            }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<aside>
+    <h2>🎤 演唱会直播目录</h2>
+    <nav id="navbar">
+        <a href="#intro" class="active">0. 核心原则</a>
+        <a href="#step1">1. 绿幕与灯光</a>
+        <a href="#step2">2. 美颜与滤镜</a>
+        <a href="#step3">3. 绿幕抠像设置</a>
+        <a href="#step4">4. 伪多机位布局</a>
+        <a href="#step5">5. 对接抖音伴侣</a>
+        <a href="#faq">6. 避坑指南</a>
+    </nav>
+</aside>
+
+<main>
+    <header>
+        <h1>OBS 绿幕演唱会直播<br>单机位实战手册</h1>
+        <div class="meta-tags">
+            <span class="tag">📱 iPhone 13</span>
+            <span class="tag">🎥 iVCam</span>
+            <span class="tag">🟢 绿幕抠像</span>
+            <span class="tag">🔴 抖音直播</span>
+        </div>
+    </header>
+
+    <section id="intro">
+        <h2><span>💡</span> 核心原则</h2>
+        <p><strong>绿幕抠像、美颜、滤镜、场景切换，全部在 OBS 里完成！</strong></p>
+        <p>抖音直播伴侣仅作为“推流器”，添加 <code>OBS Virtual Camera</code> 即可。<strong>严禁</strong>在直播伴侣里开美颜或抠像，否则双重处理必卡顿、画质必崩。</p>
+        <div class="alert alert-info">
+            ✅ <strong>黄金法则：</strong> OBS 负责画面合成，直播伴侣只负责推流。
+        </div>
+    </section>
+
+    <section id="step1">
+        <h2><span>🎬</span> 第一步：绿幕与灯光（抠像干净的关键）</h2>
+        <ul>
+            <li><strong>绿幕平整</strong>：必须拉直，不能有褶皱，否则抠像边缘会“狗牙”。</li>
+            <li><strong>人幕距离</strong>：人离绿幕至少 <strong>1.5米</strong>，防止绿光反射到头发/衣服边缘（溢色）。</li>
+            <li><strong>灯光打法</strong>：两盏灯从侧前方 <strong>45°</strong> 打向人脸，避免直射绿幕造成过曝。</li>
+        </ul>
+    </section>
+
+    <section id="step2">
+        <h2><span>✨</span> 第二步：OBS 美颜与滤镜设置</h2>
+        <p>不要用手机自带美颜！用 OBS 插件更稳、更专业。</p>
+        
+        <h3>1. 安装 OBS 美颜插件</h3>
+        <p>去 <code>obscj.com</code> 下载“OBS美颜摄像头”插件，安装后重启 OBS。</p>
+
+        <h3>2. 添加美颜源</h3>
+        <p>OBS 来源区 → <code>+</code> → 选 <strong>OBS美颜摄像头</strong> → 设备选 <code>iVCam Video</code>。</p>
+
+        <h3>3. 演唱会风格参数</h3>
+        <div class="code-wrapper">
+            <div class="code-header">
+                <span>美颜插件推荐参数</span>
+                <button class="copy-btn" onclick="copyCode(this)">复制参数</button>
+            </div>
+            <div class="code-block">基础美颜：磨皮 40 | 美白 30 | 红润 20（避免惨白）
+美型：瘦脸 20 | 大眼 10（微调即可，别变外星人）
+滤镜：选【质感灰】或【冷色调】，强度 60%（营造舞台感）
+美妆：可选【港风妆】或【超模妆】，配合舞台灯光更立体</div>
+        </div>
+        <div class="alert alert-warn">
+            ⚠️ <strong>性能优化：</strong> 如果画面花屏/卡顿，在滤镜里加一个【缩放/宽高比】，分辨率设为 <code>1280x720</code>，放在美颜滤镜<strong>之前</strong>，降低 GPU 负担。
+        </div>
+    </section>
+
+    <section id="step3">
+        <h2><span>✂️</span> 第三步：绿幕抠像设置</h2>
+        <p>右键“OBS美颜摄像头” → <strong>滤镜</strong> → <code>+</code> → <strong>色度键</strong> (Chroma Key)。</p>
+        
+        <div class="code-wrapper">
+            <div class="code-header">
+                <span>色度键抠像参数</span>
+                <button class="copy-btn" onclick="copyCode(this)">复制参数</button>
+            </div>
+            <div class="code-block">关键色类型：自定义 → 吸管吸绿幕颜色
+相似度：400~500（慢慢拉，直到绿幕消失）
+平滑度：50~80（边缘柔和，避免锯齿）
+溢色抑制：30~50（去除头发边缘的绿光）</div>
+        </div>
+        <p><strong>图层顺序</strong>：确保“色度键”在“美颜”滤镜<strong>之后</strong>，否则美颜会失效。</p>
+    </section>
+
+    <section id="step4">
+        <h2><span>🎹</span> 第四步：伪多机位 + 演唱会背景</h2>
+        
+        <h3>1. 添加演唱会背景</h3>
+        <p>来源区 → <code>+</code> → <strong>媒体源</strong> → 选你的演唱会视频（MP4）→ 勾选“循环”。</p>
+        <p><strong>图层顺序</strong>：媒体源（最底层） → OBS美颜摄像头（上层）。</p>
+
+        <h3>2. 伪多机位场景</h3>
+        <ul>
+            <li><strong>场景 A（全景）</strong>：背景视频 + 人物居中，快捷键 <code>Ctrl+1</code>。</li>
+            <li><strong>场景 B（特写）</strong>：复制美颜源 → 缩放 150% → 只留脸/手，快捷键 <code>Ctrl+2</code>。</li>
+            <li><strong>场景 C（互动）</strong>：人物放右下角 + 左侧留白放歌词/弹幕，快捷键 <code>Ctrl+3</code>。</li>
+        </ul>
+    </section>
+
+    <section id="step5">
+        <h2><span>📡</span> 第五步：对接抖音直播伴侣</h2>
+        <div class="code-wrapper">
+            <div class="code-header">
+                <span>抖音伴侣对接流程</span>
+                <button class="copy-btn" onclick="copyCode(this)">复制流程</button>
+            </div>
+            <div class="code-block">1. OBS 右下角 → 【启动虚拟摄像机】
+2. 抖音直播伴侣 → 添加素材 → 【摄像头】
+3. 设备选：OBS Virtual Camera
+4. 分辨率：1920x1080 | 帧率：30fps
+5. ❌ 关闭直播伴侣所有美颜/滤镜/贴纸！</div>
+        </div>
+        <p><strong>音频</strong>：OBS 添加 <code>iVCam Audio</code>，若不同步，右键音频 → 高级属性 → 同步偏移 <code>+200ms</code>。</p>
+    </section>
+
+    <section id="faq">
+        <h2><span>⚠️</span> 避坑指南</h2>
+        <ul>
+            <li><strong>Q: 头发边缘有绿边？</strong><br>A: 调高【溢色抑制】，或检查灯光是否直射绿幕。</li>
+            <li><strong>Q: 演唱会背景卡顿？</strong><br>A: 视频码率太高，用 HandBrake 压缩到 5000kbps 以下，或 OBS 输出分辨率降为 1080p。</li>
+            <li><strong>Q: 切换场景黑屏？</strong><br>A: OBS 设置 → 高级 → 取消勾选“启用新场景时自动重新加载源”。</li>
+            <li><strong>Q: 抖音伴侣提示摄像头被占用？</strong><br>A: 关掉微信视频、腾讯会议，它们会抢摄像头。</li>
+        </ul>
+        <div class="alert alert-info">
+            💡 <strong>开播前必做</strong>：用抖音“预览直播”跑 5 分钟，检查绿幕边缘、音画同步、场景切换是否流畅。
+        </div>
+    </section>
+</main>
+
+<script>
+    // 复制功能：兼容现代浏览器并增加错误捕获
+    function copyCode(btn) {
+        try {
+            const codeBlock = btn.parentElement.nextElementSibling;
+            const text = codeBlock.innerText;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = '已复制!';
+                btn.style.borderColor = 'var(--success)';
+                btn.style.color = 'var(--success)';
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制');
+            });
+        } catch (e) {
+            console.error('脚本执行错误:', e);
+        }
+    }
+
+    // 滚动监听：高亮当前目录
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('aside nav a');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (pageYOffset >= (sectionTop - 150)) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
